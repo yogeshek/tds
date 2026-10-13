@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Net Promoter Score by Region</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: rgb(255, 255, 255);
+      --text: rgb(33, 37, 41);
+      --subtext: rgb(108, 117, 125);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: rgb(33, 37, 41);
+        --text: rgb(248, 249, 250);
+        --subtext: rgb(173, 181, 189);
+      }
+    }
+    body { font-family: sans-serif; margin: 16px; background: var(--bg); color: var(--text); }
+    h2 { font-size: 1rem; margin-bottom: 4px; }
+    p  { font-size: 0.8rem; color: var(--subtext); margin-bottom: 12px; }
+    canvas { max-height: 280px; }
+  </style>
+</head>
+<body>
+  <h2>Net Promoter Score by Region</h2>
+  <p>Net Promoter Score (NPS) by region, ranging from -45 to +72</p>
+  <!--
+    MISMATCH: The original chart used a one-directional (sequential) ramp for NPS, which runs
+    from -100 to +100 and has a meaningful zero. A single ramp implies the values only go from
+    "less" to "more" of one thing, so a viewer reads North (-45), South (-20) and East (-5) as
+    regions with low-but-positive satisfaction, rather than net-detractor regions where
+    detractors outnumber promoters. Nothing in the colours marks where scores cross zero.
+    Cycling the ramp also painted the best regions (Urban +50, Rural +72) as pale as the worst
+    ones, so colour no longer tracked the score at all.
+
+    CORRECT SCHEME: Diverging. The data has a critical midpoint (0) with two opposite meanings
+    on either side: net detractors below zero, net promoters above. A diverging scheme uses two
+    distinct hues for the two sides (brown = negative, teal = positive), a neutral near-white
+    at 0, and darker shades for distance from zero. It uses a symmetric -72..+72 domain so that
+    equal magnitudes get equal intensity. Sequential would hide the sign, and categorical would
+    hide the order.
+
+    FIX: ColorBrewer BrBG diverging palette (colour-blind safe), centred on 0.
+  -->
+  <canvas id="chart"></canvas>
+  <p>Colour: diverging scale centred on 0. Brown = net detractors (NPS &lt; 0), teal = net promoters (NPS &gt; 0); darker = further from zero.</p>
+  <script>
+    // diverging ColorBrewer BrBG: brown - near-white - teal, midpoint at NPS 0
+    const colors = ["#8c510a","#bf812d","#dfc27d","#f6e8c3","#f5f5f5","#c7eae5","#80cdc1","#35978f","#01665e"];
+    const values = [-45, -20, -5, 12, 30, 50, 72];
+    const MAX_ABS = 72;  // symmetric domain: -72 .. +72
+    const barColors = values.map(v =>
+      colors[4 + Math.sign(v) * Math.min(4, Math.ceil(Math.abs(v) / MAX_ABS * 4))]
+    );
+    new Chart(document.getElementById('chart'), {
+      type: 'bar',
+      data: {
+        labels: ["North","South","East","West","Central","Urban","Rural"],
+        datasets: [{
+          label: 'Net Promoter Score by Region',
+          data: values,
+          backgroundColor: barColors,
+          borderColor: 'rgb(108, 117, 125)',  // keeps pale near-zero bars visible on the background
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: false } }
+      }
+    });
+  </script>
+</body>
+</html>
