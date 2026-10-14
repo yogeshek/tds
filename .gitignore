@@ -1,4 +1,5 @@
-.env
+/.env
+tds/
 __pycache__/
 ngork.yml
 *.output
